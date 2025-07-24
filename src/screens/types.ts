@@ -27,6 +27,9 @@ export type RootStackParamList = {
   Register: undefined;
   Login: undefined;
   MyArticles: undefined;
+  Write: {
+    articleId?: number;
+  };
 };
 
 export type RootStackNavigationProp =
