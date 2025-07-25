@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, Pressable } from 'react-native';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { writeComment } from '../../api/comments';
 import { Comment } from '../../api/types';
 import CommentModal from './CommentModal';
@@ -12,7 +12,12 @@ export interface CommentInputProps {
 function CommentInput({ articleId }: CommentInputProps) {
   const [writingComment, setWritingComment] = useState(false);
   const queryClient = useQueryClient();
-  const { mutate } = useMutation(writeComment, {
+  const { mutate } = useMutation<
+    Comment,
+    Error,
+    { articleId: number; message: string }
+  >({
+    mutationFn: writeComment,
     onSuccess: comment => {
       queryClient.setQueryData<Comment[]>(['comments', articleId], comments =>
         (comments || []).concat(comment),

@@ -11,7 +11,7 @@ export async function getComments(articleId: number) {
 export async function writeComment(params: {
   articleId: number;
   message: string;
-}) {
+}): Promise<Comment> {
   const { articleId, message } = params;
   const response = await client.post<Comment>(
     `/articles/${articleId}/comments`,
@@ -24,7 +24,7 @@ export async function modifyComment(params: {
   articleId: number;
   message: string;
   id: number;
-}) {
+}): Promise<Comment> {
   const { articleId, message, id } = params;
   const response = await client.put<Comment>(
     `/articles/${articleId}/comments/${id}`,
@@ -33,7 +33,10 @@ export async function modifyComment(params: {
   return response.data;
 }
 
-export async function deleteComment(params: { articleId: number; id: number }) {
+export async function deleteComment(params: {
+  articleId: number;
+  id: number;
+}): Promise<null> {
   const { articleId, id } = params;
   await client.delete(`/articles/${articleId}/comments/${id}`);
   return null;

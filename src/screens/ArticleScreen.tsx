@@ -2,8 +2,7 @@ import CommentModal from '../components/CommentModal';
 import { RouteProp, useRoute } from '@react-navigation/core';
 import React, { useState } from 'react';
 import { StyleSheet, ActivityIndicator, FlatList } from 'react-native';
-import { useMutation, useQueryClient } from 'react-query';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { getArticle } from '../../api/articles';
 import { deleteComment, getComments, modifyComment } from '../../api/comments';
 import { RootStackParamList } from './types';
@@ -16,6 +15,8 @@ import AskDialog from '../components/AskDialog';
 import { Comment } from '../../api/types';
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, 'Article'>;
+type DeleteCommentParams = { articleId: number; id: number };
+type ModifyCommentParams = { articleId: number; id: number; message: string };
 
 function ArticleScreen() {
   const { params } = useRoute<ArticleScreenRouteProp>();
@@ -27,10 +28,13 @@ function ArticleScreen() {
   const [askRemoveComment, setAskRemoveComment] = useState(false);
   const [modifying, setModifying] = useState(false);
   const queryClient = useQueryClient();
-  const { mutate: remove } = useMutation(deleteComment, {
+  const { mutate: remove } = useMutation<null, Error, DeleteCommentParams>({
+    mutationFn: deleteComment,
     onSuccess: () => {
       queryClient.setQueryData<Comment[]>(['comments', id], comments =>
-        comments ? comments.filter(c => c.id !== selectedCommentId) : [],
+        comments
+          ? comments.filter((c: Comment) => c.id !== selectedCommentId)
+          : [],
       );
     },
   });
@@ -40,11 +44,14 @@ function ArticleScreen() {
     setAskRemoveComment(true);
   };
 
-  const { mutate: modify } = useMutation(modifyComment, {
-    onSuccess: comment => {
+  const { mutate: modify } = useMutation<Comment, Error, ModifyCommentParams>({
+    mutationFn: modifyComment,
+    onSuccess: (comment: Comment) => {
       queryClient.setQueryData<Comment[]>(['comments', id], comments =>
         comments
-          ? comments.map(c => (c.id === selectedCommentId ? comment : c))
+          ? comments.map((c: Comment) =>
+              c.id === selectedCommentId ? comment : c,
+            )
           : [],
       );
     },

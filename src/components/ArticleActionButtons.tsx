@@ -3,7 +3,11 @@ import { useNavigation } from '@react-navigation/core';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { RootStackNavigationProp } from '../screens/types';
 import AskDialog from './AskDialog';
-import { InfiniteData, useMutation, useQueryClient } from 'react-query';
+import {
+  InfiniteData,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { deleteArticle } from '../../api/articles';
 import { Article } from '../../api/types';
 
@@ -16,17 +20,17 @@ function ArticleActionButtons({ articleId }: ArticleActionButtonsProps) {
   const navigation = useNavigation<RootStackNavigationProp>();
   const queryClient = useQueryClient();
 
-  const { mutate } = useMutation(deleteArticle, {
+  const { mutate } = useMutation<null, Error, number>({
+    mutationFn: deleteArticle,
     onSuccess: () => {
       navigation.goBack();
-      queryClient.setQueryData<InfiniteData<Article[]>>('articles', data => {
+      queryClient.setQueryData<InfiniteData<Article[]>>(['articles'], data => {
         if (!data) {
           return { pageParams: [], pages: [] };
         }
-
         return {
-          pageParams: data!.pageParams,
-          pages: data!.pages.map(page =>
+          pageParams: data.pageParams,
+          pages: data.pages.map(page =>
             page.find(a => a.id === articleId)
               ? page.filter(a => a.id !== articleId)
               : page,
