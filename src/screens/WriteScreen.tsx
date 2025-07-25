@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/core';
-import React, { useCallback, useEffect, useState } from 'react';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/core';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,31 +11,85 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { RootStackNavigationProp } from './types';
+import { RootStackNavigationProp, RootStackParamList } from './types';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { writeArticle } from '../../api/articles';
+import {
+  InfiniteData,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { modifyArticle, writeArticle } from '../../api/articles';
 import { Article } from '../../api/types';
 
+type WriteScreenRouteProp = RouteProp<RootStackParamList, 'Write'>;
+
 function WriteScreen() {
+  const { params } = useRoute<WriteScreenRouteProp>();
   const { top } = useSafeAreaInsets();
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
   const navigation = useNavigation<RootStackNavigationProp>();
   const queryClient = useQueryClient();
+  const cachedArticle = useMemo(() => {
+    if (!params.articleId) return null;
+    return queryClient.getQueryData<Article>(['article', params.articleId]);
+  }, [queryClient, params.articleId]);
+
+  const [title, setTitle] = useState(cachedArticle?.title ?? '');
+  const [body, setBody] = useState(cachedArticle?.body ?? '');
   const { mutate: write } = useMutation({
     mutationFn: writeArticle,
     onSuccess: article => {
-      queryClient.setQueryData<Article[]>(['articles'], articles =>
-        (articles ?? []).concat(article),
-      );
+      queryClient.setQueryData<InfiniteData<Article[]>>(['articles'], data => {
+        if (!data) {
+          return {
+            pageParams: [undefined],
+            pages: [[article]],
+          };
+        }
+
+        const [firstPage, ...restPages] = data.pages;
+
+        return {
+          ...data,
+          pages: [[article, ...firstPage], ...restPages],
+        };
+      });
+
+      navigation.goBack();
+    },
+  });
+
+  const { mutate: modify } = useMutation({
+    mutationFn: modifyArticle,
+    onSuccess: article => {
+      queryClient.setQueryData<InfiniteData<Article[]>>(['articles'], data => {
+        if (!data) {
+          return {
+            pageParams: [],
+            pages: [[]],
+          };
+        }
+
+        return {
+          pageParams: data!.pageParams,
+          pages: data!.pages.map(page =>
+            page.find(a => a.id === params.articleId)
+              ? page.map(a => (a.id === params.articleId ? article : a))
+              : page,
+          ),
+        };
+      });
+      queryClient.setQueryData(['article', params.articleId], article);
       navigation.goBack();
     },
   });
 
   const onSubmit = useCallback(() => {
-    write({ title, body });
-  }, [write, title, body]);
+    if (params.articleId) {
+      modify({ id: params.articleId, title, body });
+    } else {
+      write({ title, body });
+    }
+  }, [write, modify, title, body, params.articleId]);
 
   useEffect(() => {
     navigation.setOptions({

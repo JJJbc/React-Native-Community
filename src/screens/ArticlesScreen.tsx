@@ -21,7 +21,13 @@ function ArticlesScreen() {
     return await getArticles({ cursor: pageParam });
   };
 
-  const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery<
+  const {
+    data,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch,
+    isFetchingPreviousPage,
+  } = useInfiniteQuery<
     Article[],
     Error,
     InfiniteData<Article[]>,
@@ -33,6 +39,14 @@ function ArticlesScreen() {
     initialPageParam: undefined,
     getNextPageParam: lastPage =>
       lastPage.length === 10 ? lastPage[lastPage.length - 1].id : undefined,
+    getPreviousPageParam: (_firstPage, allPages) => {
+      const validPage = allPages.find(page => page.length > 0);
+      if (!validPage) {
+        return undefined;
+      }
+
+      return validPage[0].id;
+    },
   });
 
   const items = useMemo(() => {
@@ -51,8 +65,10 @@ function ArticlesScreen() {
     <Articles
       articles={items}
       showWriteButton={!!user}
-      fetchNextPage={fetchNextPage}
       isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={fetchNextPage}
+      refresh={refetch}
+      isRefreshing={isFetchingPreviousPage}
     />
   );
 }
