@@ -41,6 +41,7 @@ function ArticleActionButtons({ articleId }: ArticleActionButtonsProps) {
   });
 
   const onPressModify = () => {
+    console.log('수정 버튼 클릭됨', articleId);
     navigation.navigate('Write', { articleId });
   };
   const onPressRemove = () => {

@@ -28,10 +28,13 @@ function WriteScreen() {
   const { top } = useSafeAreaInsets();
   const navigation = useNavigation<RootStackNavigationProp>();
   const queryClient = useQueryClient();
-  const cachedArticle = useMemo(() => {
-    if (!params.articleId) return null;
-    return queryClient.getQueryData<Article>(['article', params.articleId]);
-  }, [queryClient, params.articleId]);
+  const cachedArticle = useMemo(
+    () =>
+      params.articleId
+        ? queryClient.getQueryData<Article>(['article', params.articleId])
+        : null,
+    [queryClient, params.articleId],
+  );
 
   const [title, setTitle] = useState(cachedArticle?.title ?? '');
   const [body, setBody] = useState(cachedArticle?.body ?? '');

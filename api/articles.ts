@@ -37,7 +37,10 @@ export async function modifyArticle(params: {
   body: string;
 }) {
   const { id, title, body } = params;
-  const response = await client.put<Article>(`/article/${id}`, { title, body });
+  const response = await client.put<Article>(`/articles/${id}`, {
+    title,
+    body,
+  });
   return response.data;
 }
 

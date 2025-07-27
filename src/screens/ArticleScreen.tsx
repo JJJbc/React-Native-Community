@@ -20,6 +20,7 @@ type ModifyCommentParams = { articleId: number; id: number; message: string };
 
 function ArticleScreen() {
   const { params } = useRoute<ArticleScreenRouteProp>();
+  console.log('WriteScreen params:', params);
   const { id } = params;
   const [currentUser] = useUserState();
   const [selectedCommentId, setSelectedCommentId] = useState<number | null>(
@@ -58,6 +59,7 @@ function ArticleScreen() {
   });
 
   const onModify = (commentId: number) => {
+    console.log('댓글 수정 클릭됨', commentId);
     setSelectedCommentId(commentId);
     setModifying(true);
   };
